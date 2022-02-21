@@ -26,6 +26,10 @@ module Lecture2
     , dropSpaces
 
     , Knight (..)
+    , Colour (..)
+    , Chest (..)
+    , Dragon (..)
+    , FightResult (..)
     , dragonFight
 
       -- * Hard
@@ -42,6 +46,8 @@ module Lecture2
 
 -- VVV If you need to import libraries, do it after this line ... VVV
 
+import Data.Char
+
 -- ^^^ and before this line. Otherwise the test suite might fail  ^^^
 
 {- | Implement a function that finds a product of all the numbers in
@@ -52,7 +58,11 @@ zero, you can stop calculating product and return 0 immediately.
 84
 -}
 lazyProduct :: [Int] -> Int
-lazyProduct = error "TODO"
+lazyProduct l =
+  if elem 0 l == True
+    then 0
+    else product l
+
 
 {- | Implement a function that duplicates every element in the list.
 
@@ -62,7 +72,7 @@ lazyProduct = error "TODO"
 "ccaabb"
 -}
 duplicate :: [a] -> [a]
-duplicate = error "TODO"
+duplicate list = concatMap (replicate 2) list 
 
 {- | Implement function that takes index and a list and removes the
 element at the given position. Additionally, this function should also
@@ -74,7 +84,17 @@ return the removed element.
 >>> removeAt 10 [1 .. 5]
 (Nothing,[1,2,3,4,5])
 -}
-removeAt = error "TODO"
+removeAt :: Int -> [a] -> (Maybe a, [a])
+removeAt n list = (Just (headb n list), deleten n list)
+    where deleten :: Int -> [a] -> [a]
+          deleten n list = case splitAt n list of
+             (a, b) -> (a ++ tail b)
+
+          headb :: Int -> [a] -> a
+          headb n list = case splitAt n list of
+            (a, b) -> head b
+
+
 
 {- | Write a function that takes a list of lists and returns only
 lists of even lengths.
@@ -85,7 +105,8 @@ lists of even lengths.
 ♫ NOTE: Use eta-reduction and function composition (the dot (.) operator)
   in this function.
 -}
-evenLists = error "TODO"
+evenLists :: [[a]] -> [[a]]
+evenLists = filter (even . length)
 
 {- | The @dropSpaces@ function takes a string containing a single word
 or number surrounded by spaces and removes all leading and trailing
@@ -101,7 +122,8 @@ spaces.
 
 🕯 HINT: look into Data.Char and Prelude modules for functions you may use.
 -}
-dropSpaces = error "TODO"
+dropSpaces :: String -> String
+dropSpaces = reverse . dropWhile isSpace . reverse . dropWhile isSpace
 
 {- |
 
@@ -163,9 +185,59 @@ data Knight = Knight
     , knightAttack    :: Int
     , knightEndurance :: Int
     }
+data Chest = Chest
+    { chestGold :: Int
+    , chestTres :: Maybe String
+    }
+ deriving Show
 
-dragonFight = error "TODO"
+data Colour = Red | Black | Green
 
+data Dragon = Dragon
+    { dragonHealth :: Int 
+    , dragonFire :: Int 
+    , dragonColour :: Colour
+    , dragonChest :: Chest
+    }
+
+data FightResult = 
+  Win Int Chest
+  | Dead 
+  | Giveup 
+ deriving Show
+
+dragonFight :: Knight -> Dragon -> FightResult
+dragonFight = fightStep 0
+  where
+   dragExp :: Colour -> Int 
+   dragExp Red = 100
+   dragExp Black = 150
+   dragExp Green = 250
+
+   fightStep :: Int -> Knight -> Dragon -> FightResult
+   fightStep strikecount knight dragon  
+    | dragonHealth dragon <= 0 = Win (dragExp (dragonColour dragon)) (destroyTres (dragonChest dragon) (dragonColour dragon))
+    | knightHealth knight <= 0 = Dead
+    | knightEndurance knight <= 0 = Giveup
+    | strikecount < 10 = fightStep (strikecount + 1) (decreaseEnd knight) (decreaseDrag dragon (knightAttack knight))
+    | otherwise = fightStep 0 (decreaseHealth knight (dragonFire dragon)) dragon
+    
+   decreaseEnd :: Knight -> Knight
+   decreaseEnd knight = knight { knightEndurance = knightEndurance knight - 1 }
+
+   decreaseDrag :: Dragon -> Int -> Dragon
+   decreaseDrag dragon attack = dragon { dragonHealth = dragonHealth dragon - attack }
+
+   decreaseHealth :: Knight -> Int -> Knight
+   decreaseHealth knight fire = knight { knightHealth = knightHealth knight - fire }
+
+destroyTres :: Chest -> Colour -> Chest
+destroyTres chest Green = chest { chestTres = Nothing }
+destroyTres chest _ = chest
+ 
+ 
+
+ 
 ----------------------------------------------------------------------------
 -- Extra Challenges
 ----------------------------------------------------------------------------
